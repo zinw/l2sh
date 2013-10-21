@@ -17,3 +17,4 @@ elif [ $(head -n1 /etc/issue|cut -d\  -f1) = "Ubuntu" ]; then
 else
 	echo "The script does not apply to this operating system."
 	exit 1
+fi
