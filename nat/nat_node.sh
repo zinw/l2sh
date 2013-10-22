@@ -1,20 +1,66 @@
 #!/bin/bash
  
-if [[ $# -ne 2 ]]; then
-        echo "./enable_alternative_gw_4centos.sh original_gw alternative_gw"
-        exit 1
+if [ $(id -u) != "0" ]; then
+    printf "Error: You must be root to run this tool!\n"
+    exit 1
 fi
- 
-original_gw=$1
-gw=$2
+clear
+printf "
+########################################################
+#                                                      #
+# This is a Shell-Based tool of making LAN to Internet #
+# throuth NAT.                                         #
+# There are 2 parts of the tool. This is for NAT_Node. #
+#                                                      #
+########################################################
+"
 
-if [ $(head -n1 /etc/issue|cut -d\  -f1) = "CentOS" ]; then
-	sed -i "s/GATEWAY=$original_gw/GATEWAY=$gw/" /etc/sysconfig/network-scripts/ifcfg-eth0
-	service network restart
-elif [ $(head -n1 /etc/issue|cut -d\  -f1) = "Ubuntu" ]; then
-	sed -i "s/gateway $original_gw/gateway $gw/" /etc/network/interfaces
-	/etc/init.d/networking restart
-else
-	echo "The script does not apply to this operating system."
-	exit 1
+gw=$(ifconfig eth0|awk -F"[: ]+" '/inet addr/{print $4}'|cut -c1-4).0.1
+echo "Please input the alternative gateway ip:"
+read -p "(Default gateway: $gw):" gw
+if [ "$gw" = "" ]; then
+	gw=$(ifconfig eth0|awk -F"[: ]+" '/inet addr/{print $4}'|cut -c1-4).0.1
 fi
+
+get_char()
+{
+SAVEDSTTY=`stty -g`
+stty -echo
+stty cbreak
+dd if=/dev/tty bs=1 count=1 2> /dev/null
+stty -raw
+stty echo
+stty $SAVEDSTTY
+}
+echo ""
+echo "We will change the gateway to $gw !"
+echo ""
+echo "Press any key to start..."
+char=`get_char`
+echo ""
+
+os=$(head -n1 /etc/issue|cut -d\  -f1)
+case $os in
+	CentOS)
+	sed -i "s/.*GATEWAY.*/GATEWAY=$gw/" /etc/sysconfig/network-scripts/ifcfg-eth0
+	service network restart
+	;;
+	Ubuntu)
+	sed -i "s/.*gateway.*/gateway $gw/" /etc/network/interfaces
+	/etc/init.d/networking restart
+	;;
+	*)
+	echo "The script does not apply to this operating system."
+	;;
+esac
+
+printf "
+########################################################
+#                                                      #
+# This is a Shell-Based tool of making LAN to Internet #
+# throuth NAT.                                         #
+# There are 2 parts of the tool. This is for NAT_Node. #
+#                                                      #
+########################################################
+"
+
