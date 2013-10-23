@@ -60,8 +60,8 @@ echo ""
 if [[ -s $ip_file ]]; then
 	if [[ -s /etc/sysconfig/iptables ]]; then
 		iptables-save > /etc/sysconfig/iptables
+		service iptables restart
 	fi
-	service iptables restart
 	iptables -F -t nat
 	while read ip
 	do
