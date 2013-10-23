@@ -47,7 +47,7 @@ case $os in
 	;;
 	Ubuntu)
 	sed -i "s/.*gateway.*/gateway $gw/" /etc/network/interfaces
-	service networking restart
+	/etc/init.d/networking restart
 	;;
 	*)
 	echo "The script does not apply to this operating system."
