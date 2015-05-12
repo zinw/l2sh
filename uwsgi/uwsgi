@@ -1,0 +1,135 @@
+#!/bin/bash
+# uWSGI        This shell script takes care of starting and stopping
+#
+#
+# chkconfig: 345 95 05
+# description: uWSGI
+#
+# pidfile: /var/run/uwsgi/pid
+# config: /etc/uwsgi.ini
+
+ 
+# Source function library.
+. /etc/rc.d/init.d/functions
+ 
+# Check for missing binaries (stale symlinks should not happen)
+UWSGI_BIN=`which uwsgi`
+CONFIG=/etc/uwsgi.ini
+PIDFILE=/var/run/uwsgi/pid
+LOCKFILE=/var/lock/subsys/uwsgi
+ 
+prog="uwsgi"
+desc="uWSGI Daemon"
+
+RETVAL=0
+
+start() {
+    echo -n $"Starting $desc ($prog): "
+    $UWSGI_BIN --ini $CONFIG \
+    --pidfile $PIDFILE \
+    > /dev/null 2>&1
+
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ] ; then
+        touch $LOCKFILE
+
+        echo_success
+        echo
+    else
+        echo_failure
+        echo
+    fi
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $desc ($prog): "
+    $UWSGI_BIN --stop $PIDFILE --vacuum > /dev/null 2>&1
+
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ] ; then
+        rm -f $LOCKFILE
+
+        echo_success
+        echo
+    else
+        echo_failure
+        echo
+    fi
+    return $RETVAL
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    echo -n $"Reloading $desc ($prog): "
+    $UWSGI_BIN --reload $PIDFILE > /dev/null 2>&1
+
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ] ; then
+        echo_success
+        echo
+    else
+        echo_failure
+        echo
+    fi
+    return $RETVAL
+}
+
+condrestart() {
+    [ -e $LOCKFILE ] && restart || :
+}
+
+status() {
+    if [ -f $PIDFILE ] ; then
+        checkpid `cat $PIDFILE`                                                                                    
+        RETVAL=$?
+        if [ $RETVAL -eq 0 ] ; then
+            echo  $"$prog is running..."
+        else
+            echo  $"$prog is stopped"
+        fi
+    else
+        echo  $"$prog is stopped"
+    fi
+    return $RETVAL
+}
+
+case "$1" in
+start)
+    start
+    ;;
+
+stop)
+    stop
+    ;;
+
+restart)
+    restart
+    ;;
+
+reload)
+    reload
+    ;;
+
+condrestart)
+    condrestart
+    ;;
+
+status)
+    status
+    ;;
+
+probe)
+    exit 0
+    ;;
+
+*)
+    echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+    exit 1
+esac
+
+exit 0
